@@ -12,7 +12,7 @@ These scripts are still very premature. In order to use them on your own you wil
 
 There are two basic command available with the utility. There is a command to list the recordings in the library, and there is a command to archive new recordings.
 
-##Archiving recordings
+## Archiving recordings
 
 ```
 $ python tablo_util.py record new
@@ -20,7 +20,7 @@ $ python tablo_util.py record new
 
 This command retrieves the list of recordings from the Tablo REST server, updates the library and archives recordings that have not previously been archived. (Recordings are structured and formatted so they are recognized by Plex Media Server.) Run this command periodically to keep your archives up to date.
 
-##Listing the library contents
+## Listing the library contents
 
 ```
 $ python tablo_util.py library list
