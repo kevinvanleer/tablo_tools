@@ -63,15 +63,8 @@ def get_recording_metadata(recording_uri):
     return r.json()
 
 def update_recording_metadata(recording):
-    try:
         recording['meta'] = get_recording_metadata(recording['uri'])
         recording['status'] = recording['meta'].get('video_details', {}).get('state')
-    except requests.exceptions.HTTPError as e:
-        if e.response.status_code == 404:
-            print("Recording no longer exists on server")
-            print (recording)
-        else:
-            raise e
 
 
 def get_recording_path(meta):

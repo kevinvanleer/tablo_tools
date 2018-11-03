@@ -5,6 +5,7 @@ import os
 import sys
 import pickle
 import pprint
+import requests
 
 pp = pprint.PrettyPrinter(indent=2)
 default_recording_repository = '/Volumes/Multimedia/TvShows'
@@ -36,9 +37,18 @@ def get_new_recordings(args):
 
     print("Downloading recording details...")
     for recording in recordings.values():
-        if 'meta' not in recording or (recording['status'] != 'finished' and recording['status'] != 'failed'):
-            tablo.api.update_recording_metadata(recording)
-            updated = True
+        if 'meta' not in recording or (recording['status'] != 'finished' and recording['status'] != 'failed' and recording['status'] != 'not_found'):
+            try:
+                tablo.api.update_recording_metadata(recording)
+                updated = True
+            except requests.exceptions.HTTPError as e:
+                if e.response.status_code == 404:
+                    print("Recording no longer exists on server")
+                    print (recording)
+                    recording['status'] = 'not_found'
+                    updated = True
+                else:
+                    raise e
 
     tablo.library.update_library(recordings) if updated else None
 
