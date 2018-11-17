@@ -7,19 +7,38 @@ import pickle
 import pprint
 import requests
 
+import logging
+
+# create logger
+logger = logging.getLogger('tablo_util')
+logger.setLevel(logging.INFO)
+
+# create console handler and set level to debug
+ch = logging.StreamHandler()
+ch.setLevel(logging.INFO)
+
+# create formatter
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+# add formatter to ch
+ch.setFormatter(formatter)
+
+# add ch to logger
+logger.addHandler(ch)
+
 pp = pprint.PrettyPrinter(indent=2)
 default_recording_repository = '/Volumes/Multimedia/TvShows'
 
 def download_and_convert_episodes(recordings, recording_repository, seriesList):
     count = 0
-    print ("Downloading and converting episodes...")
+    logger.info("Downloading and converting episodes...")
     for recording in recordings.values():
         if recording.get('path') is not None and recording.get('downloaded', False) == False:
             if any(show in recording['path'] for show in seriesList):
                 tablo.api.download_and_convert_tv_episode(recording, recording_repository)
                 count += 1
 
-    print("Retrieved {} episodes".format(count))
+    logger.info("Retrieved {} episodes".format(count))
 
 
 def get_new_recordings(args):
@@ -32,10 +51,10 @@ def get_new_recordings(args):
     updated = False
     have_meta = (1 for k in recordings.values() if k.get('meta'))
     downloaded = (1 for k in recordings.values() if k.get('downloaded', False) == True)
-    print("{}/{} have metadata".format(sum(have_meta), len(recordings)))
-    print("{}/{} recordings downloaded".format(sum(downloaded), len(recordings)))
+    logger.info("{}/{} have metadata".format(sum(have_meta), len(recordings)))
+    logger.info("{}/{} recordings downloaded".format(sum(downloaded), len(recordings)))
 
-    print("Downloading recording details...")
+    logger.info("Downloading recording details...")
     for recording in recordings.values():
         if 'meta' not in recording or (recording['status'] != 'finished' and recording['status'] != 'failed' and recording['status'] != 'not_found'):
             try:
@@ -43,8 +62,8 @@ def get_new_recordings(args):
                 updated = True
             except requests.exceptions.HTTPError as e:
                 if e.response.status_code == 404:
-                    print("Recording no longer exists on server")
-                    print (recording)
+                    logger.info("Recording no longer exists on server")
+                    logger.debug(recording)
                     recording['status'] = 'not_found'
                     updated = True
                 else:
@@ -52,7 +71,7 @@ def get_new_recordings(args):
 
     tablo.library.update_library(recordings) if updated else None
 
-    print("Building library structure...")
+    logger.info("Building library structure...")
     for recording in recordings.values():
         if 'meta' in recording and recording['status'] == 'finished':
                 tablo.api.update_recording_path(recording)
@@ -71,7 +90,7 @@ def get_new_recordings(args):
     download_and_convert_episodes(recordings, recording_repository, shows)
 
     tablo.library.update_library(recordings)
-    print("Done")
+    logger.info("Done")
 
 def list_library(args):
     recordings = {}
@@ -116,7 +135,7 @@ if __name__ == "__main__":
     record_subparsers = parser_record.add_subparsers(help='record sub help')
 
     record_new_parser = record_subparsers.add_parser('new', help='record new')
-    record_new_parser.add_argument('--repo', type=str, help='path where converted recordings are stored')
+    record_new_parser.add_argument('--repo', type=str, default=default_recording_repository, help='path where converted recordings are stored')
     record_new_parser.set_defaults(func=get_new_recordings)
 
     # parse some argument lists
