@@ -9,6 +9,11 @@ http_server = base_url + ':18080'
 recordings_url = rest_server + '/recordings'
 pvr_url = http_server + '/pvr/'
 
+
+class DownloadError(Exception):
+    pass
+
+
 def getEpisodePath(series, season, episode):
     file_string_format = "{} - s{:02}e{:02}"
     seriesDir = series
@@ -45,8 +50,29 @@ def download_and_convert_tv_episode(recording, recording_repository):
     episodeDir = (os.path.dirname(os.path.join(recording_repository, recording['path'])))
     if not os.path.exists(episodeDir):
         os.makedirs(episodeDir)
-    ffmpeg.input(getPlaylistUrl(recording['id'])).output(os.path.join(recording_repository, recording['path'] + '.mp4'), absf='aac_adtstoasc', codec='copy').run()
-    recording['downloaded'] = True
+    try:
+        ffmpeg.input(getPlaylistUrl(recording['id'])).output(os.path.join(recording_repository, recording['path'] + '.mp4'), absf='aac_adtstoasc', codec='copy').run()
+        if recording['error']:
+            recording['error'] = False
+        recording['downloaded'] = True
+    except ffmpeg.Error as e:
+        r = requests.get(getPlaylistUrl(recording['id']))
+        if r.status_code != requests.codes.ok:
+            print("Request to Tablo server failed: {}".format(r.status_code))
+            recording['error'] = True
+            if r.status_code == 404:
+                print("Recording {} not found".format(recording['id']))
+                recording['status'] = 'not_found'
+            elif r.status_code < 500:
+                print("Invalid request: {}".format(getPlaylistUrl(recording['id'])));
+            elif r.status_code >= 500:
+                print("Server error: {}".format(r.status_code))
+            else:
+                print("Unknown HTTP error: {}".format(r.status_code))
+            raise DownloadError('HTTP error', r)
+        else:
+            raise DownloadError('Unknown ffmpeg error', e)
+
 
 def initialize_recordings():
     r = requests.get(recordings_url + '/airings')
