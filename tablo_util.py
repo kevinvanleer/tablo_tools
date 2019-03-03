@@ -33,10 +33,13 @@ def download_and_convert_episodes(recordings, recording_repository, seriesList):
     count = 0
     logger.info("Downloading and converting episodes...")
     for recording in recordings.values():
-        if recording.get('path') is not None and recording.get('downloaded', False) == False:
+        if recording.get('path') is not None and recording.get('downloaded', False) == False and recording.get('status', 'new') != 'not_found':
             if any(show in recording['path'] for show in seriesList):
-                tablo.api.download_and_convert_tv_episode(recording, recording_repository)
-                count += 1
+                try:
+                    tablo.api.download_and_convert_tv_episode(recording, recording_repository)
+                    count += 1
+                except tablo.api.DownloadError as e:
+                    logger.error(e)
 
     logger.info("Retrieved {} episodes".format(count))
 
