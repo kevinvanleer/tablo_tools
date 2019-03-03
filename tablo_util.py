@@ -89,7 +89,7 @@ def get_new_recordings(args):
     tablo.api.find_downloaded_recordings(recordings, recording_repository)
     tablo.library.update_library(recordings)
 
-    shows = ['Modern Family', 'Big Bang Theory', 'NOVA', 'Nature', 'Alf', 'A-Team', 'Bill Nye the Science Guy', 'Star Trek', 'Good Place']
+    shows = ['Modern Family', 'Big Bang Theory', 'NOVA', 'Nature', 'Alf', 'A-Team', 'Bill Nye the Science Guy', 'Star Trek', 'Good Place', 'Victoria', 'New Girl']
     download_and_convert_episodes(recordings, recording_repository, shows)
 
     tablo.library.update_library(recordings)
