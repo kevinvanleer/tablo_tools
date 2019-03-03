@@ -14,7 +14,7 @@ logger = logging.getLogger('tablo_util')
 logger.setLevel(logging.INFO)
 
 # create console handler and set level to debug
-ch = logging.StreamHandler()
+ch = logging.StreamHandler(sys.stdout)
 ch.setLevel(logging.INFO)
 
 # create formatter
