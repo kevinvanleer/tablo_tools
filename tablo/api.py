@@ -38,10 +38,10 @@ def find_downloaded_recordings(recordings, recording_repository):
         if recording.get('path') is not None and recording.get('downloaded', False) == False:
             recording['downloaded'] = has_recording_been_downloaded(recording_repository, (recording['path'] + '.mp4'))
             if recording['downloaded']:
-                print("Found recording for {}".format(recording['path']))
+                print("Found recording for {}".format(recording['path']).encode('utf-8'))
 
 def download_and_convert_tv_episode(recording, recording_repository):
-    print("Archiving {} -- {}".format(recording['id'], recording['path']))
+    print("Archiving {} -- {}".format(recording['id'], recording['path']).encode('utf-8'))
     episodeDir = (os.path.dirname(os.path.join(recording_repository, recording['path'])))
     if not os.path.exists(episodeDir):
         os.makedirs(episodeDir)
