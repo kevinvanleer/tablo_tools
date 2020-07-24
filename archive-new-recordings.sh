@@ -28,9 +28,9 @@ if [ $? != 0 ] ; then
     exit 1
 fi
 
-cp ${REPO}/tablo_library.p /home/kvl/.tablo/tablo_library.p
+cp ${REPO}/TvShows/tablo_library.p /home/kvl/.tablo/tablo_library.p
 ${SRC_DIR}/venv/bin/python ${SRC_DIR}/tablo_util.py record new --repo=${REPO}/TvShows
-cp /home/kvl/.tablo/tablo_library.p ${REPO}/tablo_library.p
+cp /home/kvl/.tablo/tablo_library.p ${REPO}/TvShows/tablo_library.p
 
 if [ ${shouldUnmount} == "TRUE" ] ; then
     echo "Unmounting ${REPO}"
