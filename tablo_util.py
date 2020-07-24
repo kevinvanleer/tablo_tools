@@ -29,11 +29,14 @@ logger.addHandler(ch)
 pp = pprint.PrettyPrinter(indent=2)
 default_recording_repository = '/Volumes/Multimedia/TvShows'
 
+def shouldArchiveAiring(recording):
+    return recording.get('path') is not None and recording.get('downloaded', False) == False and recording.get('status', 'new') != 'not_found' and recording.get('duplicate', False) == False
+
 def download_and_convert_episodes(recordings, recording_repository, seriesList):
     count = 0
     logger.info("Downloading and converting episodes...")
     for recording in recordings.values():
-        if recording.get('path') is not None and recording.get('downloaded', False) == False and recording.get('status', 'new') != 'not_found':
+        if shouldArchiveAiring(recording):
             if any(show in recording['path'] for show in seriesList):
                 try:
                     tablo.api.download_and_convert_tv_episode(recording, recording_repository)
@@ -62,6 +65,7 @@ def get_new_recordings(args):
         if 'meta' not in recording or (recording['status'] != 'finished' and recording['status'] != 'failed' and recording['status'] != 'not_found'):
             try:
                 tablo.api.update_recording_metadata(recording)
+                recording['duplicate'] = tablo.api.is_recording_duplicate(recording, recordings)
                 updated = True
             except requests.exceptions.HTTPError as e:
                 if e.response.status_code == 404:
@@ -90,20 +94,19 @@ def get_new_recordings(args):
     tablo.library.update_library(recordings)
 
     shows = ['Modern Family', 'Big Bang Theory', 'NOVA', 'Nature', 'Alf', 'A-Team', 'Bill Nye the Science Guy', 'Star Trek', 'Good Place', 'Victoria', 'New Girl']
+
     download_and_convert_episodes(recordings, recording_repository, shows)
 
     tablo.library.update_library(recordings)
     logger.info("Done")
 
 def list_library(args):
-    recordings = {}
+    recordings = tablo.api.initialize_recordings()
     tablo.library.load_library(recordings)
 
-    if args.full:
-        pp.pprint(recordings)
-        return
-
     for recording in recordings.values():
+        tablo.api.update_recording_metadata(recording)
+        recording['duplicate'] = tablo.api.is_recording_duplicate(recording, recordings)
         if 'episode' in recording['meta']:
             print("{}: {} -- season {} episode {} -- {} -- {}".format(
                 recording['meta']['airing_details']['show_title'],
@@ -115,6 +118,10 @@ def list_library(args):
                 ))
         else:
             print(recording['meta']['airing_details']['show_title'])
+
+    if args.full:
+        pp.pprint(recordings)
+        return
 
 def record(args):
     print(args)

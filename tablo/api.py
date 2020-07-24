@@ -2,8 +2,9 @@ import requests
 import pickle
 import ffmpeg
 import os
+from functools import reduce
 
-base_url = 'http://192.168.0.215'
+base_url = 'http://192.168.0.214'
 rest_server = base_url + ':8885'
 http_server = base_url + ':18080'
 recordings_url = rest_server + '/recordings'
@@ -35,6 +36,37 @@ def getPlaylistUrl(recording_id):
     return pvr_url + recording_id + '/pl/playlist.m3u8'
 
 
+def nested_get(obj, path, default=None):
+    keys = path.split('.')
+    try:
+        return reduce(lambda sub, key: sub[key], keys, obj)
+    except (KeyError, IndexError):
+        return default
+
+
+def find_recordings(query, path, recordings):
+    return filter(lambda rec: nested_get(rec, path) == query, recordings.values())
+
+
+def find_tms_id(tms_id, path, recordings):
+    if tms_id is None:
+        return []
+    return list(find_recordings(tms_id, path, recordings))
+
+
+def is_recording_duplicate(recording, recordings):
+    tms_path = 'meta.episode.tms_id'
+    tms_id = nested_get(recording, tms_path)
+    if tms_id is None:
+        tms_path = 'meta.event.tms_id'
+        tms_id = nested_get(recording, tms_path)
+
+    found = None
+    if tms_id is not None:
+        found = find_tms_id(tms_id, tms_path, recordings)
+    return found is not None and len(found) > 1
+
+
 def has_recording_been_downloaded(recording_repository, recording_path):
     return os.path.exists(os.path.join(recording_repository, recording_path))
 
@@ -52,7 +84,7 @@ def download_and_convert_tv_episode(recording, recording_repository):
         os.makedirs(episodeDir)
     try:
         ffmpeg.input(getPlaylistUrl(recording['id'])).output(os.path.join(recording_repository, recording['path'] + '.mp4'), absf='aac_adtstoasc', codec='copy').run()
-        if recording['error']:
+        if 'error' in recording:
             recording['error'] = False
         recording['downloaded'] = True
     except ffmpeg.Error as e:
