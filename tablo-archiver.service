@@ -1,0 +1,12 @@
+[Unit]
+Description=Tablo Archiver Service
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/home/kvl/src/tablo_tools/archive-new-recordings.linux.sh
+User=kvl
+Group=kvl
+
+[Install]
+WantedBy=default.target
